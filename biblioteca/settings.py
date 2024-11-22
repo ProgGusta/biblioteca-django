@@ -40,6 +40,9 @@ INSTALLED_APPS = [
     'core',
     'rest_framework',
     'django_filters',
+    # Token authentication
+    "rest_framework.authtoken",
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'biblioteca.urls'
@@ -133,4 +137,30 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
         "rest_framework.filters.SearchFilter",
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
+
+SPECTACULAR_SETTINGS = {
+	"TITLE": "RESTIC Back-end API",
+	"DESCRIPTION": "Your project description",
+	"VERSION": "1.0.0",
+	"SERVE INCLUDE SCHEMA": False,
+	# OTHER SETTINGS
+    "AUTHENTICATION_WHITELIST": [
+        # Lista de autenticações suportadas na documentação
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,  # Mantém a autorização no Swagger UI durante as requisições
+    },
+}
+
+CORS_ALLOWED_ORIGINS = [
+    "http://192.168.1.100",
+]

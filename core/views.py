@@ -2,6 +2,25 @@ from rest_framework import generics
 from .models import Livro, Categoria, Autor
 from .serializers import LivroSerializer, CategoriaSerializer, AutorSerializer
 from .filters import LivroFilter
+from rest_framework import generics
+from .models import Colecao
+from .serializers import ColecaoSerializer
+from .custom_permissions import IsOwnerOrReadOnly
+
+class ColecaoListCreate(generics.ListCreateAPIView):
+    queryset = Colecao.objects.all()
+    serializer_class = ColecaoSerializer
+    name = "colecao-list-create"
+    permission_classes = [IsOwnerOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(colecionador=self.request.user)
+
+class ColecaoDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Colecao.objects.all()
+    serializer_class = ColecaoSerializer
+    name = "colecao-detail"
+    permission_classes = [IsOwnerOrReadOnly]
 
 # Create your views here.
 class LivroList(generics.ListCreateAPIView):

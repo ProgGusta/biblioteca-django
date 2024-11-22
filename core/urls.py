@@ -8,4 +8,6 @@ urlpatterns = [
     path('categorias/<int:pk>/', views.CategoriaDetail.as_view(), name='categoria-detail'),
     path('autores/', views.AutorList.as_view(), name='autores-list'),
     path('autores/<int:pk>/', views.AutorDetail.as_view(), name='autor-detail'),
+    path('colecoes/', views.ColecaoListCreate.as_view(), name='colecao-list-create'),
+    path('colecoes/<int:pk>/', views.ColecaoDetail.as_view(), name='colecao-detail'),
 ]
