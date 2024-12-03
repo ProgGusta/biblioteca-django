@@ -29,5 +29,8 @@ class Colecao(models.Model):
     livros = models.ManyToManyField(Livro, related_name="colecoes")
     colecionador = models.ForeignKey(User, on_delete=models.CASCADE, related_name="colecoes")
 
+    class Meta:
+        ordering = ("nome",)
+
     def __str__(self):
         return f"{self.nome} - {self.colecionador.username}"

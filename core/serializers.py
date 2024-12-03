@@ -45,20 +45,13 @@ class LivroSerializer(serializers.Serializer):
         instance.save()
         return instance
     
-class ColecaoSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    nome = serializers.CharField(max_length=100)
-    descricao = serializers.CharField(max_length=100)
-    livros = serializers.PrimaryKeyRelatedField(many=True, queryset=Livro.objects.all())
-    colecionador = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
 
-    def create(self, validated_data):
-        return Colecao.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        instance.nome = validated_data.get('nome', instance.nome)
-        instance.descricao = validated_data.get('descricao', instance.descricao)
-        instance.livros = validated_data.get('livros', instance.livros)
-        instance.colecionador = validated_data.get('colecionador', instance.colecionador)
-        instance.save()
-        return instance
+class ColecaoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Colecao
+        fields = ['id', 'nome', 'colecionador']
+        read_only_fields = ['colecionador']

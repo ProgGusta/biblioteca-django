@@ -5,13 +5,19 @@ from .filters import LivroFilter
 from rest_framework import generics
 from .models import Colecao
 from .serializers import ColecaoSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 from .custom_permissions import IsOwnerOrReadOnly
 
 class ColecaoListCreate(generics.ListCreateAPIView):
     queryset = Colecao.objects.all()
     serializer_class = ColecaoSerializer
     name = "colecao-list-create"
-    permission_classes = [IsOwnerOrReadOnly]
+    search_fields = ("^nome",)
+    ordering_fields = ['nome', 'colecionador']
+    filterset_fields = ['colecionador']
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
 
     def perform_create(self, serializer):
         serializer.save(colecionador=self.request.user)
@@ -20,7 +26,8 @@ class ColecaoDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Colecao.objects.all()
     serializer_class = ColecaoSerializer
     name = "colecao-detail"
-    permission_classes = [IsOwnerOrReadOnly]
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
 
 # Create your views here.
 class LivroList(generics.ListCreateAPIView):

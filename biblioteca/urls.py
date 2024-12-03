@@ -30,4 +30,5 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     # Endpoint para gerar o token de autenticação
     path('api-token-auth/', obtain_auth_token, name='api-token-auth'),
+    path("auth/", include("rest_framework.urls")),
 ]

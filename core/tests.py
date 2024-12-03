@@ -1,79 +1,78 @@
-from rest_framework.test import APITestCase
+from django.urls import reverse
 from rest_framework import status
+from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
 from .models import Colecao
 from rest_framework.authtoken.models import Token
 
 class ColecaoTests(APITestCase):
-    def create_user_and_set_token_credentials(self):
-        user = User.objects.create_user(
-            "user01", "user01@example.com", "user01P4ssw0rD"
-        )
-        token = Token.objects.create(user=user)
-        self.client.credentials(HTTP_AUTHORIZATION="Token {0}".format(token.key))
 
     def setUp(self):
-        self.create_user_and_set_token_credentials()
-        '''
-            self.user = User.objects.create_user(username='testuser', password='testpass')
-            self.client.login(username='testuser', password='testpass')
-        '''    
+        self.user = User.objects.create_user(username='testuser', password='testpass')
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
-    def test_create_colecao(self):
-        url = '/api/colecoes/'
-        data = {'nome': 'Minha Coleção'}
+    def post_colecao(self, nome):
+        url = reverse('colecao-list-create')
+        data = {'nome': nome}
         response = self.client.post(url, data, format='json')
+        return response
+
+    def test_criar_colecao(self):
+        response = self.post_colecao('Minha Coleção')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Colecao.objects.count(), 1)
         self.assertEqual(Colecao.objects.get().colecionador, self.user)
 
-    def test_only_owner_can_edit_or_delete_colecao(self):
+    def test_apenas_colecionador_pode_editar_ou_deletar_colecao(self):
         colecao = Colecao.objects.create(nome='Minha Coleção', colecionador=self.user)
-        url = f'/api/colecoes/{colecao.id}/'
+        url = reverse('colecao-detail', args=[colecao.id])
         data = {'nome': 'Coleção Editada'}
-
-        # Outro usuário tentando editar
-        other_user = User.objects.create_user(username='otheruser', password='otherpass')
-        self.client.login(username='otheruser', password='otherpass')
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        # Outro usuário tentando deletar
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        # Proprietário editando
-        self.client.login(username='testuser', password='testpass')
+        
+        # Teste de edição pelo colecionador
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # Proprietário deletando
+        self.assertEqual(Colecao.objects.get().nome, 'Coleção Editada')
+        
+        # Teste de edição por outro usuário
+        outro_usuario = User.objects.create_user(username='outro', password='testpass')
+        outro_token = Token.objects.create(user=outro_usuario)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + outro_token.key)
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        # Teste de deleção pelo colecionador
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Colecao.objects.count(), 0)
 
-    def test_unauthenticated_user_cannot_create_update_delete_colecao(self):
+    def test_usuario_nao_autenticado_nao_pode_criar_colecao(self):
         self.client.logout()
-        url = '/api/colecoes/'
+        url = reverse('colecao-list-create')
         data = {'nome': 'Minha Coleção'}
-
-        # Tentando criar
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        # Tentando editar
+    def test_usuario_nao_autenticado_nao_pode_atualizar_colecao(self):
         colecao = Colecao.objects.create(nome='Minha Coleção', colecionador=self.user)
-        url = f'/api/colecoes/{colecao.id}/'
-        response = self.client.put(url, data, format='json')
+        self.client.logout()
+        url = reverse('colecao-detail', args=[colecao.id])
+        response = self.client.put(url, {'nome': 'Coleção Editada'}, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        # Tentando deletar
+    def test_usuario_nao_autenticado_nao_pode_deletar_colecao(self):
+        colecao = Colecao.objects.create(nome='Minha Coleção', colecionador=self.user)
+        self.client.logout()
+        url = reverse('colecao-detail', args=[colecao.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_list_colecoes(self):
+    def test_listagem_colecoes_visiveis_para_usuarios_autenticados(self):
         Colecao.objects.create(nome='Coleção 1', colecionador=self.user)
         Colecao.objects.create(nome='Coleção 2', colecionador=self.user)
-        url = '/api/colecoes/'
+        
+        url = reverse('colecao-list-create')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data['results']), 2)
